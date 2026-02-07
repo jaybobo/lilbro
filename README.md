@@ -1,6 +1,8 @@
 # LilBro - Authentication Change Detection GitHub Action
 
-LilBro is a lovable tattletale that helps overworked and understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when manual review may be needed.
+Misconfigured authentication and sensitive data leaks? **Nobody got time for that!**
+
+LilBro is a lovable tattletale that helps understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when an additional manual or AI-powered security review may be needed.
 
 ## Features
 
@@ -315,6 +317,10 @@ lilbro/
 │   └── defaults.yml        # Default thresholds & settings
 └── spec/                   # RSpec tests
 ```
+
+## Contributing
+
+Additions, edits and suggestions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for recommended guidelines.
 
 ## License
 
