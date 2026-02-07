@@ -1,6 +1,6 @@
 # LilBro - Authentication Change Detection GitHub Action
 
-A Ruby-based GitHub Action that monitors pull requests for authentication-related changes and alerts security teams when manual review may be needed.
+LilBro is a lovable tattletale that helps overworked and understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when manual review may be needed.
 
 ## Features
 
@@ -14,7 +14,7 @@ A Ruby-based GitHub Action that monitors pull requests for authentication-relate
 ## Quick Start
 
 ```yaml
-name: Security Review Check
+name: Authentication Review Check
 on:
   pull_request:
     types: [opened, synchronize]
@@ -125,8 +125,8 @@ keywords:
 
 # Custom detection prompt (optional)
 detection_prompt: |
-  You are reviewing code for MyCompany's security team.
-  Focus especially on changes to our internal SSO integration.
+  You are reviewing code for the application security team.
+  Identify if any authentication related changes are being made.
 
   Keywords to watch for: {keywords}
 
@@ -138,65 +138,6 @@ Then reference it in your workflow:
 ### Language-Specific Framework Examples
 
 Add these framework-specific keywords to your `detection.yml` based on your stack:
-
-#### Ruby
-
-```yaml
-keywords:
-  ruby_auth_frameworks:
-    - devise
-    - doorkeeper
-    - warden
-    - omniauth
-    - omniauth_callbacks
-    - authenticatable
-    - current_user
-    - user_signed_in
-    - authenticate_user
-    - sign_in
-    - sign_out
-```
-
-#### JavaScript / Node.js
-
-```yaml
-keywords:
-  javascript_auth_frameworks:
-    - passport
-    - passport.js
-    - passportjs
-    - auth.js
-    - authjs
-    - next-auth
-    - nextauth
-    - express-session
-    - jsonwebtoken
-    - bcrypt
-    - serialize_user
-    - deserialize_user
-```
-
-#### Python
-
-```yaml
-keywords:
-  python_auth_frameworks:
-    - django-allauth
-    - allauth
-    - flask-login
-    - flask_login
-    - login_required
-    - current_user
-    - fastapi-users
-    - fastapi_users
-    - python-jose
-    - passlib
-    - authenticate
-    - login_manager
-    - user_loader
-```
-
-#### Combined Multi-Language Example
 
 ```yaml
 # .github/lilbro/detection.yml
@@ -226,15 +167,7 @@ keywords:
     - internal_oauth
 ```
 
-```yaml
-- uses: your-org/lilbro@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    detection_config_path: .github/lilbro/detection.yml
-```
-
-## Example Workflow with All Options
+## Example Workflow
 
 ```yaml
 name: Security Review Check
