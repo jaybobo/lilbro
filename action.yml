@@ -1,0 +1,69 @@
+name: 'LilBro Security Review'
+description: 'Monitors pull requests for authentication-related changes and alerts security teams when manual review may be needed'
+author: 'Your Organization'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+
+  anthropic_api_key:
+    description: 'Claude API key for detection and summarization'
+    required: true
+
+  # Notification channels
+  slack_webhook_url:
+    description: 'Slack incoming webhook URL'
+    required: false
+  teams_webhook_url:
+    description: 'Microsoft Teams webhook URL'
+    required: false
+  post_pr_comment:
+    description: 'Post findings as a PR comment'
+    default: 'false'
+
+  # Thresholds
+  risk_threshold:
+    description: 'Minimum risk score to trigger any notification (0-100)'
+    default: '50'
+  pr_comment_threshold:
+    description: 'Minimum score for PR comment (defaults to risk_threshold)'
+    required: false
+  slack_threshold:
+    description: 'Minimum score for Slack notification (defaults to risk_threshold)'
+    required: false
+  teams_threshold:
+    description: 'Minimum score for Teams notification (defaults to risk_threshold)'
+    required: false
+
+  # Customization
+  custom_keywords:
+    description: 'Additional keywords to detect (comma-separated)'
+    required: false
+  detection_prompt:
+    description: 'Custom detection prompt (overrides default)'
+    required: false
+  detection_config_path:
+    description: 'Path to custom detection.yml in repo'
+    required: false
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    GITHUB_TOKEN: ${{ inputs.github_token }}
+    ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+    SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
+    TEAMS_WEBHOOK_URL: ${{ inputs.teams_webhook_url }}
+    POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
+    RISK_THRESHOLD: ${{ inputs.risk_threshold }}
+    PR_COMMENT_THRESHOLD: ${{ inputs.pr_comment_threshold }}
+    SLACK_THRESHOLD: ${{ inputs.slack_threshold }}
+    TEAMS_THRESHOLD: ${{ inputs.teams_threshold }}
+    CUSTOM_KEYWORDS: ${{ inputs.custom_keywords }}
+    DETECTION_PROMPT: ${{ inputs.detection_prompt }}
+    DETECTION_CONFIG_PATH: ${{ inputs.detection_config_path }}

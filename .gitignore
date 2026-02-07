@@ -1,0 +1,41 @@
+# Ruby/Bundler
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+/.bundle/
+/vendor/bundle
+
+# Documentation
+/doc/
+/rdoc/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# VCR cassettes with sensitive data
+spec/fixtures/vcr_cassettes/*.yml
+!spec/fixtures/vcr_cassettes/.gitkeep

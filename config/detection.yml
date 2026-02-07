@@ -1,0 +1,178 @@
+# LilBro Detection Configuration
+# Customize keywords and prompts for authentication change detection
+
+keywords:
+  authentication_methods:
+    - jwt
+    - basic-auth
+    - bearer-auth
+    - bearer
+    - oauth
+    - oauth2
+    - oidc
+    - openid
+    - saml
+    - sso
+    - single-sign-on
+    - kerberos
+    - ntlm
+    - digest-auth
+    - mutual-tls
+    - mtls
+    - certificate-auth
+    - api-key
+    - hmac
+
+  identity_providers:
+    - okta
+    - active_directory
+    - azure_ad
+    - entra
+    - auth0
+    - cognito
+    - firebase_auth
+    - keycloak
+    - ping_identity
+    - onelogin
+    - duo
+    - google_identity
+    - ldap
+    - radius
+
+  sensitive_patterns:
+    - api_token
+    - api_key
+    - access_token
+    - refresh_token
+    - secret
+    - secret_key
+    - private_key
+    - credential
+    - password
+    - passwd
+    - session
+    - session_id
+    - cookie
+    - csrf
+    - xsrf
+    - nonce
+
+  auth_operations:
+    - login
+    - logout
+    - sign_in
+    - sign_out
+    - sign_up
+    - register
+    - authenticate
+    - authorize
+    - authorization
+    - authentication
+    - verify
+    - validate
+    - mfa
+    - 2fa
+    - two_factor
+    - totp
+    - hotp
+    - otp
+    - passkey
+    - webauthn
+    - fido
+    - biometric
+    - passwordless
+
+  session_management:
+    - session_store
+    - session_expiry
+    - session_timeout
+    - token_expiry
+    - token_refresh
+    - revoke
+    - invalidate
+    - remember_me
+    - persistent_session
+
+  # Language-specific authentication frameworks
+  ruby_frameworks:
+    - devise
+    - doorkeeper
+    - warden
+    - omniauth
+    - omniauth_callbacks
+    - authenticatable
+    - current_user
+    - user_signed_in
+    - authenticate_user
+
+  javascript_frameworks:
+    - passport
+    - passportjs
+    - auth.js
+    - authjs
+    - next-auth
+    - nextauth
+    - express-session
+    - jsonwebtoken
+    - serialize_user
+    - deserialize_user
+
+  python_frameworks:
+    - django-allauth
+    - allauth
+    - flask-login
+    - flask_login
+    - login_required
+    - fastapi-users
+    - fastapi_users
+    - python-jose
+    - passlib
+    - login_manager
+    - user_loader
+
+detection_prompt: |
+  You are a security code reviewer analyzing a pull request for authentication-related changes.
+
+  Review the following code diff and identify:
+  1. Any authentication mechanism changes (JWT, OAuth, SAML, basic-auth, bearer tokens, etc.)
+  2. Changes to identity provider integrations (Okta, Active Directory, Auth0, etc.)
+  3. Modifications to session handling, token management, or credential storage
+  4. New or modified login/logout flows
+  5. Changes to MFA/2FA implementations
+  6. Permission or authorization logic changes
+  7. Security header modifications
+  8. Cookie or session configuration changes
+  9. Changes to authentication framework configurations:
+     - Ruby: Devise, Doorkeeper, Warden, OmniAuth
+     - JavaScript: Passport.js, Auth.js, NextAuth
+     - Python: django-allauth, Flask-Login, FastAPI-Users
+
+  Keywords to specifically watch for: {keywords}
+
+  For each finding, provide a JSON response with the following structure:
+  {
+    "findings": [
+      {
+        "type": "string - category of auth change (e.g., 'oauth_integration', 'session_handling', 'mfa_change')",
+        "file": "string - filename where change was found",
+        "code_section": "string - relevant code snippet or line reference",
+        "description": "string - what the change does",
+        "security_relevance": "string - why this matters for security",
+        "risk_level": "string - one of: none, low, medium, high, critical",
+        "recommendation": "string - suggested review focus or action"
+      }
+    ],
+    "summary": "string - brief overall summary of auth-related changes",
+    "auth_changes_detected": boolean,
+    "highest_risk": "string - the highest risk level found among all findings"
+  }
+
+  If no authentication-related changes are found, return:
+  {
+    "findings": [],
+    "summary": "No authentication-related changes detected in this pull request.",
+    "auth_changes_detected": false,
+    "highest_risk": "none"
+  }
+
+  Respond ONLY with valid JSON, no additional text or markdown formatting.
