@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 
 ruby '>= 3.2'
 
-gem 'anthropic', '~> 0.3'
+gem 'anthropic', '~> 1.19'
 gem 'faraday', '~> 2.0'
 gem 'octokit', '~> 8.0'
 
