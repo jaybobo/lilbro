@@ -290,11 +290,41 @@ bundle exec rspec
 
 ### Local Testing with act
 
-Use [act](https://github.com/nektos/act) to run the action locally:
+Use [act](https://github.com/nektos/act) to run the action locally.
+
+**1. Create `.secrets`** with your API keys:
+
+```bash
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+SLACK_SECURITY_WEBHOOK=https://hooks.slack.com/services/xxx/xxx/xxx
+```
+
+**2. Create `test-event.json`** to simulate a pull request event:
+
+```json
+{
+  "pull_request": {
+    "number": 123,
+    "title": "Add OAuth login flow",
+    "html_url": "https://github.com/your-org/your-repo/pull/123",
+    "user": {
+      "login": "developer"
+    }
+  },
+  "repository": {
+    "full_name": "your-org/your-repo"
+  }
+}
+```
+
+**3. Run act:**
 
 ```bash
 act pull_request -e test-event.json --secret-file .secrets
 ```
+
+> **Note:** Ensure `.secrets` is in your `.gitignore` to avoid committing credentials.
 
 ## Architecture
 

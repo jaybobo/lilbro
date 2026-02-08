@@ -21,6 +21,8 @@
 .env
 .env.*
 !.env.example
+.secrets
+test-event.json
 
 # IDE
 .idea/
