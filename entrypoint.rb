@@ -137,13 +137,13 @@ class Entrypoint
   private
 
   def resolve_config_path
-    return nil unless @detection_config_path
+    return nil if @detection_config_path.nil? || @detection_config_path.empty?
 
     # Check if path exists in the workspace
     workspace = ENV['GITHUB_WORKSPACE'] || '.'
     full_path = File.join(workspace, @detection_config_path)
 
-    File.exist?(full_path) ? full_path : nil
+    File.exist?(full_path) && File.file?(full_path) ? full_path : nil
   end
 
   def detect_keywords(content, keywords)
