@@ -17,6 +17,9 @@
 /doc/
 /rdoc/
 
+# Local Testing
+/.github/
+
 # Environment files
 .env
 .env.*
