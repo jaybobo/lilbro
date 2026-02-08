@@ -25,12 +25,26 @@ jobs:
   auth-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: your-org/lilbro@v1
+      - uses: jaybobo/lilbro@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           post_pr_comment: true
           slack_webhook_url: ${{ secrets.SLACK_SECURITY_WEBHOOK }}
+```
+
+### Using Latest Commit
+
+To use the latest commit from main (includes recent fixes not yet in a release):
+
+```yaml
+      - uses: jaybobo/lilbro@main
+```
+
+Or pin to a specific commit SHA for stability:
+
+```yaml
+      - uses: jaybobo/lilbro@abc1234
 ```
 
 ## Configuration
@@ -181,7 +195,7 @@ jobs:
   auth-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: your-org/lilbro@v1
+      - uses: jaybobo/lilbro@v1
         with:
           # Required
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -219,7 +233,7 @@ The action provides the following outputs:
 Use outputs in subsequent steps:
 
 ```yaml
-- uses: your-org/lilbro@v1
+- uses: jaybobo/lilbro@v1
   id: security-check
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
