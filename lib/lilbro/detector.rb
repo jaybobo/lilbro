@@ -161,29 +161,42 @@ module Lilbro
         raw_response: response_text
       )
     rescue JSON::ParserError => e
-      # If JSON parsing fails, create a result indicating an error
+      # If JSON parsing fails, try to extract useful info from the raw response
+      # Claude likely detected something if it gave a text response
+      auth_detected = response_text.match?(/auth|password|token|session|login|credential/i)
+
       DetectionResult.new(
         findings: [],
-        summary: "Failed to parse Claude response: #{e.message}",
-        auth_changes_detected: false,
-        highest_risk: 'none',
+        summary: "Claude analysis completed but response format was unexpected. " \
+                 "Manual review recommended. Raw response preview: #{response_text[0, 200]}...",
+        auth_changes_detected: auth_detected,
+        highest_risk: auth_detected ? 'medium' : 'none',
         raw_response: response_text
       )
     end
 
     def extract_json(text)
-      # Try to find JSON in the response (handle markdown code blocks)
-      # Match ```json, ```ruby, or any other language identifier
+      # Strategy 1: Try to find JSON in markdown code blocks
       if text.include?('```')
-        # Skip the language identifier (e.g., json, ruby) and capture the content
         match = text.match(/```\w*\s*(.*?)\s*```/m)
-        content = match&.captures&.first || text.strip
-
-        # If content starts with { or [, it's likely JSON
-        content.strip.start_with?('{', '[') ? content.strip : text.strip
-      else
-        text.strip
+        content = match&.captures&.first&.strip
+        return content if content&.start_with?('{', '[')
       end
+
+      # Strategy 2: Try to find a JSON object anywhere in the text
+      # Look for content between first { and last }
+      if text.include?('{') && text.include?('}')
+        start_idx = text.index('{')
+        end_idx = text.rindex('}')
+        if start_idx && end_idx && end_idx > start_idx
+          potential_json = text[start_idx..end_idx]
+          # Validate it looks like our expected JSON structure
+          return potential_json if potential_json.include?('"findings"') || potential_json.include?('"summary"')
+        end
+      end
+
+      # Strategy 3: Return stripped text and let JSON parser handle it
+      text.strip
     end
 
     def empty_result
