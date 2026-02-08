@@ -173,10 +173,14 @@ module Lilbro
 
     def extract_json(text)
       # Try to find JSON in the response (handle markdown code blocks)
-      if text.include?('```json')
-        text.match(/```json\s*(.*?)\s*```/m)&.captures&.first || text
-      elsif text.include?('```')
-        text.match(/```\s*(.*?)\s*```/m)&.captures&.first || text
+      # Match ```json, ```ruby, or any other language identifier
+      if text.include?('```')
+        # Skip the language identifier (e.g., json, ruby) and capture the content
+        match = text.match(/```\w*\s*(.*?)\s*```/m)
+        content = match&.captures&.first || text.strip
+
+        # If content starts with { or [, it's likely JSON
+        content.strip.start_with?('{', '[') ? content.strip : text.strip
       else
         text.strip
       end
