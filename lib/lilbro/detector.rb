@@ -23,7 +23,7 @@ module Lilbro
     attr_reader :config, :client
 
     def initialize(api_key:, config_path: nil, custom_keywords: nil, custom_prompt: nil)
-      @client = Anthropic::Client.new(api_key: api_key)
+      @client = Anthropic::Client.new(access_token: api_key)
       @config = load_config(config_path)
       @custom_keywords = custom_keywords
       @custom_prompt = custom_prompt
