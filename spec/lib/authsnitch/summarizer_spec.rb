@@ -12,15 +12,11 @@ RSpec.describe Authsnitch::Summarizer do
           type: 'oauth_integration',
           file: 'lib/auth/oauth_handler.rb',
           code_section: 'def authenticate(token)',
-          description: 'New OAuth token validation logic',
-          security_relevance: 'Token handling affects authentication security',
-          risk_level: 'high',
-          recommendation: 'Review token validation and expiry logic'
+          description: 'New OAuth token validation logic'
         )
       ],
       summary: 'OAuth integration changes detected with new token handling.',
       auth_changes_detected: true,
-      highest_risk: 'high',
       raw_response: nil
     )
   end
@@ -50,8 +46,7 @@ RSpec.describe Authsnitch::Summarizer do
         :summary,
         :findings,
         :files_affected,
-        :keywords,
-        :recommendations
+        :keywords
       )
     end
 
@@ -96,7 +91,6 @@ RSpec.describe Authsnitch::Summarizer do
 
       finding = result[:findings].first
       expect(finding[:type_display]).to eq('Oauth Integration')
-      expect(finding[:risk_badge]).to eq('`HIGH`')
     end
   end
 
@@ -112,7 +106,7 @@ RSpec.describe Authsnitch::Summarizer do
       text = summarizer.to_text(summary)
 
       expect(text).to include('AuthSnitch - Authentication Changes Detected')
-      expect(text).to include('Oauth Integration [HIGH]')
+      expect(text).to include('Oauth Integration')
       expect(text).to include('lib/auth/oauth_handler.rb')
     end
   end

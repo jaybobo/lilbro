@@ -94,14 +94,10 @@ RSpec.describe Authsnitch::Detector do
               'file' => 'app/controllers/sessions_controller.rb',
               'code_section' => 'JWT.encode(payload, secret)',
               'description' => 'JWT token generation',
-              'security_relevance' => 'Token creation affects authentication',
-              'risk_level' => 'medium',
-              'recommendation' => 'Verify token expiry is set'
             }
           ],
           'summary' => 'JWT token handling changes detected.',
-          'auth_changes_detected' => true,
-          'highest_risk' => 'medium'
+          'auth_changes_detected' => true
         }.to_json
       end
 
@@ -116,7 +112,6 @@ RSpec.describe Authsnitch::Detector do
 
         expect(result).to be_a(Authsnitch::Detector::DetectionResult)
         expect(result.auth_changes_detected).to be true
-        expect(result.highest_risk).to eq('medium')
       end
 
       it 'parses findings correctly' do
@@ -126,7 +121,6 @@ RSpec.describe Authsnitch::Detector do
 
         finding = result.findings.first
         expect(finding.type).to eq('jwt_implementation')
-        expect(finding.risk_level).to eq('medium')
       end
     end
   end

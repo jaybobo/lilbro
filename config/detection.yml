@@ -156,23 +156,18 @@ detection_prompt: |
         "type": "string - category of auth change (e.g., 'oauth_integration', 'session_handling', 'mfa_change')",
         "file": "string - filename where change was found",
         "code_section": "string - relevant code snippet or line reference",
-        "description": "string - what the change does",
-        "security_relevance": "string - why this matters for security",
-        "risk_level": "string - one of: none, low, medium, high, critical",
-        "recommendation": "string - suggested review focus or action"
+        "description": "string - what the change does"
       }
     ],
     "summary": "string - brief overall summary of auth-related changes",
-    "auth_changes_detected": boolean,
-    "highest_risk": "string - the highest risk level found among all findings"
+    "auth_changes_detected": boolean
   }
 
   If no authentication-related changes are found, return:
   {
     "findings": [],
     "summary": "No authentication-related changes detected in this pull request.",
-    "auth_changes_detected": false,
-    "highest_risk": "none"
+    "auth_changes_detected": false
   }
 
   Respond ONLY with valid JSON, no additional text or markdown formatting.

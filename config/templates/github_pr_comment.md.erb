@@ -1,12 +1,5 @@
 ## <%= summary[:title] %>
 
-<% if summary[:pr_section][:title] %>
-**PR:** <%= summary[:pr_section][:title] %>
-<% if summary[:pr_section][:author] %>
-**Author:** <%= summary[:pr_section][:author] %>
-<% end %>
-
-<% end %>
 ### Summary
 <%= summary[:summary] %>
 
@@ -16,16 +9,12 @@
 
 #### <%= finding[:type_display] %>
 **File:** `<%= finding[:file] %>`
-**Risk:** <%= finding[:risk_badge] %>
+<% if finding[:code_section] %>
+**Code:** `<%= finding[:code_section] %>`
+<% end %>
 
 <%= finding[:description] %>
 
-> **Why this matters:** <%= finding[:security_relevance] %>
-
-<% if finding[:recommendation] %>
-**Recommendation:** <%= finding[:recommendation] %>
-
-<% end %>
 <% end %>
 <% end %>
 <% if summary[:files_affected].any? %>

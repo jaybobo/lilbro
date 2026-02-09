@@ -16,8 +16,7 @@ module Authsnitch
         summary: detection_result.summary,
         findings: format_findings(detection_result.findings),
         files_affected: extract_affected_files(detection_result.findings),
-        keywords: keywords_detected,
-        recommendations: extract_recommendations(detection_result.findings)
+        keywords: keywords_detected
       }
     end
 
@@ -36,7 +35,7 @@ module Authsnitch
       if summary[:findings].any?
         lines << "Findings:"
         summary[:findings].each_with_index do |finding, i|
-          lines << "  #{i + 1}. #{finding[:type_display]} [#{finding[:risk_level].upcase}]"
+          lines << "  #{i + 1}. #{finding[:type_display]}"
           lines << "     File: #{finding[:file]}"
           lines << "     #{finding[:description]}"
           lines << ""
@@ -74,11 +73,7 @@ module Authsnitch
           type_display: humanize_type(finding.type),
           file: finding.file,
           code_section: finding.code_section,
-          description: finding.description,
-          security_relevance: finding.security_relevance,
-          risk_level: finding.risk_level,
-          risk_badge: risk_badge(finding.risk_level),
-          recommendation: finding.recommendation
+          description: finding.description
         }
       end
     end
@@ -93,31 +88,9 @@ module Authsnitch
           .join(' ')
     end
 
-    def risk_badge(level)
-      case level.to_s.downcase
-      when 'critical'
-        '`CRITICAL`'
-      when 'high'
-        '`HIGH`'
-      when 'medium'
-        '`MEDIUM`'
-      when 'low'
-        '`LOW`'
-      else
-        '`NONE`'
-      end
-    end
-
     def extract_affected_files(findings)
       findings.map(&:file).compact.uniq
     end
 
-    def extract_recommendations(findings)
-      findings
-        .map(&:recommendation)
-        .compact
-        .reject(&:empty?)
-        .uniq
-    end
   end
 end

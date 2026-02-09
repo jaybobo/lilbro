@@ -11,12 +11,11 @@ module Authsnitch
 
     Finding = Struct.new(
       :type, :file, :code_section, :description,
-      :security_relevance, :risk_level, :recommendation,
       keyword_init: true
     )
 
     DetectionResult = Struct.new(
-      :findings, :summary, :auth_changes_detected, :highest_risk, :raw_response,
+      :findings, :summary, :auth_changes_detected, :raw_response,
       keyword_init: true
     )
 
@@ -146,10 +145,7 @@ module Authsnitch
           type: f['type'],
           file: f['file'],
           code_section: f['code_section'],
-          description: f['description'],
-          security_relevance: f['security_relevance'],
-          risk_level: f['risk_level']&.downcase || 'none',
-          recommendation: f['recommendation']
+          description: f['description']
         )
       end
 
@@ -157,7 +153,6 @@ module Authsnitch
         findings: findings,
         summary: data['summary'] || 'Analysis complete.',
         auth_changes_detected: data['auth_changes_detected'] || false,
-        highest_risk: data['highest_risk']&.downcase || 'none',
         raw_response: response_text
       )
     rescue JSON::ParserError => e
@@ -170,7 +165,6 @@ module Authsnitch
         summary: "Claude analysis completed but response format was unexpected. " \
                  "Manual review recommended. Raw response preview: #{response_text[0, 200]}...",
         auth_changes_detected: auth_detected,
-        highest_risk: auth_detected ? 'medium' : 'none',
         raw_response: response_text
       )
     end
@@ -204,7 +198,6 @@ module Authsnitch
         findings: [],
         summary: 'No diff content provided for analysis.',
         auth_changes_detected: false,
-        highest_risk: 'none',
         raw_response: nil
       )
     end

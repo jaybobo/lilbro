@@ -254,7 +254,7 @@ Notification layouts are rendered from ERB templates in `config/templates/`. You
 
 All templates receive two variables:
 
-- **`summary`** — Hash with keys: `title`, `pr_section`, `summary`, `findings`, `files_affected`, `keywords`, `recommendations`
+- **`summary`** — Hash with keys: `title`, `pr_section`, `summary`, `findings`, `files_affected`, `keywords`
 - **`pr_info`** — Hash with keys: `title`, `number`, `author`, `repo`, `url`
 
 A `truncate(text, max)` helper method is also available in all templates.
@@ -278,9 +278,6 @@ Edit the ERB files in `config/templates/` to change notification layouts. For ex
 ```markdown
 ## AuthSnitch - Authentication Changes Detected
 
-**PR:** #123 "Add OAuth login flow"
-**Author:** @developer
-
 ### Summary
 OAuth integration changes detected with new token handling.
 
@@ -288,13 +285,9 @@ OAuth integration changes detected with new token handling.
 
 #### Oauth Integration
 **File:** `lib/auth/oauth_handler.rb`
-**Risk:** `HIGH`
+**Code:** `def authenticate(token)`
 
 New OAuth token validation logic
-
-> **Why this matters:** Token handling affects authentication security
-
-**Recommendation:** Review token validation and expiry logic
 ```
 
 ### Slack/Teams Rich Card

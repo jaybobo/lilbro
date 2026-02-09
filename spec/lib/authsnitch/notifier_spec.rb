@@ -13,15 +13,11 @@ RSpec.describe Authsnitch::Notifier do
           type: 'session_handling',
           file: 'app/controllers/sessions_controller.rb',
           code_section: 'session[:user_id] = user.id',
-          description: 'Session assignment change',
-          security_relevance: 'Affects user authentication',
-          risk_level: 'medium',
-          recommendation: 'Review session configuration'
+          description: 'Session assignment change'
         )
       ],
       summary: 'Session handling changes detected.',
       auth_changes_detected: true,
-      highest_risk: 'medium',
       raw_response: nil
     )
   end
