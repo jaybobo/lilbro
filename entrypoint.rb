@@ -16,11 +16,9 @@ class Entrypoint
     @teams_webhook_url = ENV['TEAMS_WEBHOOK_URL']
     @post_pr_comment = ENV['POST_PR_COMMENT']&.downcase == 'true'
 
-    # Thresholds
-    @risk_threshold = (ENV['RISK_THRESHOLD'] || '50').to_i
-    @pr_comment_threshold = ENV['PR_COMMENT_THRESHOLD']&.to_i
-    @slack_threshold = ENV['SLACK_THRESHOLD']&.to_i
-    @teams_threshold = ENV['TEAMS_THRESHOLD']&.to_i
+    # Signal configuration
+    @notify_on_claude_only = ENV['NOTIFY_ON_CLAUDE_ONLY']&.downcase == 'true'
+    @notify_on_keywords_only = ENV['NOTIFY_ON_KEYWORDS_ONLY']&.downcase == 'true'
 
     # Customization
     @custom_keywords = ENV['CUSTOM_KEYWORDS']
@@ -51,7 +49,6 @@ class Entrypoint
       custom_keywords: @custom_keywords,
       custom_prompt: @detection_prompt
     )
-    risk_scorer = Authsnitch::RiskScorer.new
     notifier = Authsnitch::Notifier.new(github_client: github_client)
 
     # Fetch PR data
@@ -75,15 +72,17 @@ class Entrypoint
     log 'Running Claude detection analysis...'
     detection_result = detector.analyze(diff_content, file_changes: file_changes)
 
-    if detection_result.auth_changes_detected
-      log "Auth changes detected! Highest risk: #{detection_result.highest_risk}"
-    else
-      log 'No authentication-related changes detected.'
-    end
+    claude_detected = detection_result.auth_changes_detected
+    log claude_detected ? 'Claude detected auth changes.' : 'No authentication-related changes detected by Claude.'
 
-    # Calculate risk score
-    score_result = risk_scorer.calculate(detection_result, file_changes: file_changes)
-    log "Risk score: #{score_result[:score]} (#{score_result[:label]})"
+    # Detect keywords in the diff
+    keywords_detected = detect_keywords(diff_content, detector.all_keywords)
+    keywords_found = keywords_detected.any?
+    log keywords_found ? "Keywords matched: #{keywords_detected.join(', ')}" : 'No keywords matched.'
+
+    # Determine whether to notify based on boolean signals
+    should_notify = determine_notification(claude_detected, keywords_found)
+    log "Notification decision: #{should_notify ? 'NOTIFY' : 'SKIP'}"
 
     # Build PR info
     pr_info = {
@@ -94,24 +93,17 @@ class Entrypoint
       url: pr_data.html_url
     }
 
-    # Detect keywords in the diff
-    keywords_detected = detect_keywords(diff_content, detector.all_keywords)
-
     # Send notifications
     notification_config = {
       post_pr_comment: @post_pr_comment,
-      pr_comment_threshold: @pr_comment_threshold,
       slack_webhook_url: @slack_webhook_url,
-      slack_threshold: @slack_threshold,
-      teams_webhook_url: @teams_webhook_url,
-      teams_threshold: @teams_threshold,
-      risk_threshold: @risk_threshold
+      teams_webhook_url: @teams_webhook_url
     }
 
     log 'Sending notifications...'
     results = notifier.notify_all(
       detection_result: detection_result,
-      score_result: score_result,
+      should_notify: should_notify,
       pr_info: pr_info,
       keywords_detected: keywords_detected,
       config: notification_config
@@ -129,7 +121,7 @@ class Entrypoint
     end
 
     # Output summary
-    output_summary(detection_result, score_result)
+    output_summary(detection_result, keywords_detected)
 
     log 'AuthSnitch Security Review complete.'
   end
@@ -151,13 +143,23 @@ class Entrypoint
     keywords.select { |kw| content_lower.include?(kw.downcase) }
   end
 
-  def output_summary(detection_result, score_result)
-    # Set GitHub Actions outputs
-    set_output('risk_score', score_result[:score])
-    set_output('risk_label', score_result[:label])
+  def determine_notification(claude_detected, keywords_found)
+    if claude_detected && keywords_found
+      true
+    elsif claude_detected && !keywords_found
+      @notify_on_claude_only
+    elsif !claude_detected && keywords_found
+      @notify_on_keywords_only
+    else
+      false
+    end
+  end
+
+  def output_summary(detection_result, keywords_detected)
     set_output('auth_changes_detected', detection_result.auth_changes_detected)
     set_output('findings_count', detection_result.findings.length)
     set_output('summary', detection_result.summary)
+    set_output('keywords_matched', keywords_detected.join(','))
   end
 
   def set_output(name, value)

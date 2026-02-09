@@ -26,19 +26,13 @@ inputs:
     description: 'Post findings as a PR comment'
     default: 'false'
 
-  # Thresholds
-  risk_threshold:
-    description: 'Minimum risk score to trigger any notification (0-100)'
-    default: '50'
-  pr_comment_threshold:
-    description: 'Minimum score for PR comment (defaults to risk_threshold)'
-    required: false
-  slack_threshold:
-    description: 'Minimum score for Slack notification (defaults to risk_threshold)'
-    required: false
-  teams_threshold:
-    description: 'Minimum score for Teams notification (defaults to risk_threshold)'
-    required: false
+  # Signal configuration
+  notify_on_claude_only:
+    description: 'Notify when only Claude detects auth changes but no keywords match'
+    default: 'false'
+  notify_on_keywords_only:
+    description: 'Notify when only keywords match but Claude does not detect auth changes'
+    default: 'false'
 
   # Customization
   custom_keywords:
@@ -60,10 +54,8 @@ runs:
     SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
     TEAMS_WEBHOOK_URL: ${{ inputs.teams_webhook_url }}
     POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
-    RISK_THRESHOLD: ${{ inputs.risk_threshold }}
-    PR_COMMENT_THRESHOLD: ${{ inputs.pr_comment_threshold }}
-    SLACK_THRESHOLD: ${{ inputs.slack_threshold }}
-    TEAMS_THRESHOLD: ${{ inputs.teams_threshold }}
+    NOTIFY_ON_CLAUDE_ONLY: ${{ inputs.notify_on_claude_only }}
+    NOTIFY_ON_KEYWORDS_ONLY: ${{ inputs.notify_on_keywords_only }}
     CUSTOM_KEYWORDS: ${{ inputs.custom_keywords }}
     DETECTION_PROMPT: ${{ inputs.detection_prompt }}
     DETECTION_CONFIG_PATH: ${{ inputs.detection_config_path }}

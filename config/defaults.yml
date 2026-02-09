@@ -1,40 +1,5 @@
 # AuthSnitch Default Configuration
 
-# Risk thresholds (0-100)
-thresholds:
-  default: 50
-  pr_comment: 50
-  slack: 50
-  teams: 50
-
-# Risk score mappings from Claude's assessment
-risk_scores:
-  none: 0
-  low: 20
-  medium: 40
-  high: 65
-  critical: 85
-
-# Score modifiers
-modifiers:
-  multiple_auth_files: 10      # Applied when 2+ auth-sensitive files are touched
-  identity_provider_change: 15 # Applied when identity provider code is modified
-  credential_handling: 20      # Applied when credential/secret handling is changed
-
-# Risk level labels for display
-risk_labels:
-  0-24: "LOW"
-  25-49: "MEDIUM"
-  50-74: "HIGH"
-  75-100: "CRITICAL"
-
-# Colors for notifications
-risk_colors:
-  low: "#36a64f"       # Green
-  medium: "#f2c744"    # Yellow
-  high: "#ff9800"      # Orange
-  critical: "#dc3545"  # Red
-
 # Claude API settings
 claude:
   model: "claude-sonnet-4-20250514"

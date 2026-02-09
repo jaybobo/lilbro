@@ -6,6 +6,8 @@ require 'json'
 module Authsnitch
   # Sends notifications to various channels (Slack, Teams, PR comments)
   class Notifier
+    ALERT_COLOR = '#ff9800'
+
     attr_reader :github_client, :summarizer
 
     def initialize(github_client:)
@@ -13,52 +15,43 @@ module Authsnitch
       @summarizer = Summarizer.new
     end
 
-    # Send notifications to all configured channels based on thresholds
+    # Send notifications to all configured channels based on should_notify boolean
     # @param detection_result [Detector::DetectionResult] Detection result
-    # @param score_result [Hash] Score result from RiskScorer
+    # @param should_notify [Boolean] Whether to send notifications
     # @param pr_info [Hash] PR metadata
     # @param keywords_detected [Array<String>] Keywords found
     # @param config [Hash] Notification configuration
     # @return [Hash] Results for each channel
-    def notify_all(detection_result:, score_result:, pr_info:, keywords_detected:, config:)
+    def notify_all(detection_result:, should_notify:, pr_info:, keywords_detected:, config:)
       summary = summarizer.summarize(
         detection_result: detection_result,
-        score_result: score_result,
         pr_info: pr_info,
-        keywords_detected: keywords_detected
+        keywords_detected: keywords_detected,
+        should_notify: should_notify
       )
 
       results = {}
-      score = score_result[:score]
+
+      unless should_notify
+        results[:pr_comment] = { skipped: true, reason: 'Notification not triggered' } if config[:post_pr_comment]
+        results[:slack] = { skipped: true, reason: 'Notification not triggered' } if config[:slack_webhook_url]
+        results[:teams] = { skipped: true, reason: 'Notification not triggered' } if config[:teams_webhook_url]
+        return results
+      end
 
       # PR Comment
       if config[:post_pr_comment]
-        threshold = config[:pr_comment_threshold] || config[:risk_threshold] || 50
-        if score >= threshold
-          results[:pr_comment] = post_pr_comment(summary, pr_info)
-        else
-          results[:pr_comment] = { skipped: true, reason: "Score #{score} below threshold #{threshold}" }
-        end
+        results[:pr_comment] = post_pr_comment(summary, pr_info)
       end
 
       # Slack
       if config[:slack_webhook_url]
-        threshold = config[:slack_threshold] || config[:risk_threshold] || 50
-        if score >= threshold
-          results[:slack] = send_slack(summary, pr_info, config[:slack_webhook_url])
-        else
-          results[:slack] = { skipped: true, reason: "Score #{score} below threshold #{threshold}" }
-        end
+        results[:slack] = send_slack(summary, pr_info, config[:slack_webhook_url])
       end
 
       # Teams
       if config[:teams_webhook_url]
-        threshold = config[:teams_threshold] || config[:risk_threshold] || 50
-        if score >= threshold
-          results[:teams] = send_teams(summary, pr_info, config[:teams_webhook_url])
-        else
-          results[:teams] = { skipped: true, reason: "Score #{score} below threshold #{threshold}" }
-        end
+        results[:teams] = send_teams(summary, pr_info, config[:teams_webhook_url])
       end
 
       results
@@ -104,7 +97,7 @@ module Authsnitch
       { success: false, channel: 'slack', error: e.message }
     end
 
-    # Send Teams notification using Adaptive Card format
+    # Send Teams notification using MessageCard format
     # @param summary [Hash] Formatted summary
     # @param pr_info [Hash] PR metadata
     # @param webhook_url [String] Teams webhook URL
@@ -129,9 +122,6 @@ module Authsnitch
     private
 
     def build_slack_payload(summary, pr_info)
-      risk = summary[:risk_display]
-      color = risk[:color]
-
       blocks = []
 
       # Header
@@ -144,20 +134,20 @@ module Authsnitch
         }
       }
 
-      # Risk Score Section
-      blocks << {
-        type: 'section',
-        fields: [
-          {
+      # Signal Summary
+      signal_parts = []
+      signal_parts << "Claude: Detected" if summary[:findings].any?
+      signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
+
+      if signal_parts.any?
+        blocks << {
+          type: 'section',
+          text: {
             type: 'mrkdwn',
-            text: "*Risk Score:* #{risk[:score]} (#{risk[:label]})"
-          },
-          {
-            type: 'mrkdwn',
-            text: risk[:bar]
+            text: "*Signals:* #{signal_parts.join(' | ')}"
           }
-        ]
-      }
+        }
+      end
 
       # Divider
       blocks << { type: 'divider' }
@@ -255,7 +245,7 @@ module Authsnitch
       {
         attachments: [
           {
-            color: color,
+            color: ALERT_COLOR,
             blocks: blocks
           }
         ]
@@ -263,11 +253,12 @@ module Authsnitch
     end
 
     def build_teams_payload(summary, pr_info)
-      risk = summary[:risk_display]
-
       # Build facts for PR info
       facts = []
-      facts << { title: 'Risk Score', value: "#{risk[:score]} (#{risk[:label]})" }
+      signal_parts = []
+      signal_parts << "Claude: Detected" if summary[:findings].any?
+      signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
+      facts << { title: 'Signals', value: signal_parts.join(' | ') } if signal_parts.any?
       facts << { title: 'PR', value: "##{pr_info[:number]} - #{pr_info[:title]}" } if pr_info[:title]
       facts << { title: 'Author', value: pr_info[:author] } if pr_info[:author]
       facts << { title: 'Repository', value: pr_info[:repo] } if pr_info[:repo]
@@ -300,7 +291,7 @@ module Authsnitch
       {
         '@type': 'MessageCard',
         '@context': 'http://schema.org/extensions',
-        themeColor: risk[:color].delete('#'),
+        themeColor: ALERT_COLOR.delete('#'),
         summary: summary[:title],
         sections: [
           {

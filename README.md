@@ -1,14 +1,18 @@
-# AuthSnitch - Authentication Change Detection GitHub Action
+# AuthSnitch
+
+## What's AuthSnitch?
+
+AuthSnitch is an authentication change detection GitHub Action.
 
 Misconfigured authentication and sensitive data leaks? **Nobody got time for that!**
 
-AuthSnitch is a lovable tattletale that helps understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when an additional manual or AI-powered security review may be needed.
+It is a lovable tattletale that helps understaffed appsec teams monitor pull requests for authentication-related changes and alerts when an additional manual or AI-powered security review may be needed.
 
 ## Features
 
 - **Claude-Powered Detection**: Uses Claude AI to intelligently analyze code changes for authentication-related modifications
 - **Configurable Keywords**: Detect JWT, OAuth, SAML, SSO, MFA, and identity provider integrations (Okta, Auth0, Azure AD, etc.)
-- **Risk Scoring**: Automatically calculates risk scores (0-100) based on the nature and scope of changes
+- **Boolean Signal Notifications**: Two independent signals (Claude analysis + keyword matching) determine whether to notify — no numeric scores or thresholds
 - **Multi-Channel Notifications**: Alert via PR comments, Slack, and/or Microsoft Teams
 - **Customizable Prompts**: Override detection prompts for organization-specific requirements
 - **Advisory Only**: Never blocks merges - provides visibility without friction
@@ -64,19 +68,12 @@ Or pin to a specific commit SHA for stability:
 | `slack_webhook_url` | Slack incoming webhook URL | - |
 | `teams_webhook_url` | Microsoft Teams webhook URL | - |
 
-### Thresholds
-
-Each notification channel can have its own threshold, enabling scenarios like:
-- PR comments at score 30+ (developer visibility)
-- Slack at score 50+ (security team awareness)
-- Teams at score 75+ (critical alerts only)
+### Signal Configuration
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `risk_threshold` | Minimum score to trigger any notification | `50` |
-| `pr_comment_threshold` | Minimum score for PR comment | Uses `risk_threshold` |
-| `slack_threshold` | Minimum score for Slack | Uses `risk_threshold` |
-| `teams_threshold` | Minimum score for Teams | Uses `risk_threshold` |
+| `notify_on_claude_only` | Notify when only Claude detects auth changes but no keywords match | `false` |
+| `notify_on_keywords_only` | Notify when only keywords match but Claude does not detect auth changes | `false` |
 
 ### Customization
 
@@ -86,24 +83,21 @@ Each notification channel can have its own threshold, enabling scenarios like:
 | `detection_prompt` | Custom detection prompt (overrides default) |
 | `detection_config_path` | Path to custom `detection.yml` in repo |
 
-## Risk Scoring
+## Notification Logic
 
-AuthSnitch calculates risk scores based on Claude's analysis:
+AuthSnitch uses two boolean signals to decide whether to send notifications:
 
-| Risk Level | Score Range |
-|------------|-------------|
-| None | 0 |
-| Low | 10-24 |
-| Medium | 25-49 |
-| High | 50-74 |
-| Critical | 75-100 |
+1. **Claude signal** — Did Claude's analysis detect authentication changes?
+2. **Keyword signal** — Were any keywords from `detection.yml` found in the diff?
 
-### Score Modifiers
+| Claude | Keywords | Default Action | Configurable? |
+|--------|----------|---------------|---------------|
+| Yes    | Yes      | Notify        | No (always)   |
+| Yes    | No       | Skip          | Yes — `notify_on_claude_only: true` |
+| No     | Yes      | Skip          | Yes — `notify_on_keywords_only: true` |
+| No     | No       | Skip          | No (never)    |
 
-Additional points are added for:
-- **Multiple auth-sensitive files touched**: +10
-- **Identity provider changes** (Okta, Azure AD, etc.): +15
-- **Credential/secret handling**: +20
+By default, notifications are only sent when **both** signals agree. You can enable either `notify_on_claude_only` or `notify_on_keywords_only` to cast a wider net.
 
 ## Keywords Detected
 
@@ -201,15 +195,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
-          # Enable all notification channels with different thresholds
+          # Enable notification channels
           post_pr_comment: true
-          pr_comment_threshold: 30
-
           slack_webhook_url: ${{ secrets.SLACK_SECURITY_WEBHOOK }}
-          slack_threshold: 50
-
           teams_webhook_url: ${{ secrets.TEAMS_SECURITY_WEBHOOK }}
-          teams_threshold: 75
+
+          # Widen the notification net (optional)
+          notify_on_claude_only: true
+          notify_on_keywords_only: false
 
           # Add custom keywords
           custom_keywords: 'internal_sso,corp_ldap,my_auth_service'
@@ -224,11 +217,10 @@ The action provides the following outputs:
 
 | Output | Description |
 |--------|-------------|
-| `risk_score` | Calculated risk score (0-100) |
-| `risk_label` | Risk label (LOW, MEDIUM, HIGH, CRITICAL) |
-| `auth_changes_detected` | Whether auth changes were found (true/false) |
+| `auth_changes_detected` | Whether Claude detected auth changes (true/false) |
 | `findings_count` | Number of findings detected |
 | `summary` | Brief summary of the analysis |
+| `keywords_matched` | Comma-separated list of matched keywords |
 
 Use outputs in subsequent steps:
 
@@ -241,8 +233,9 @@ Use outputs in subsequent steps:
 
 - name: Check results
   run: |
-    echo "Risk Score: ${{ steps.security-check.outputs.risk_score }}"
+    echo "Auth changes: ${{ steps.security-check.outputs.auth_changes_detected }}"
     echo "Findings: ${{ steps.security-check.outputs.findings_count }}"
+    echo "Keywords: ${{ steps.security-check.outputs.keywords_matched }}"
 ```
 
 ## Notification Format
@@ -250,9 +243,7 @@ Use outputs in subsequent steps:
 ### PR Comment Example
 
 ```markdown
-## AuthSnitch Security Alert - HIGH RISK
-
-**Risk Score: 72 (HIGH)** [*******---]
+## AuthSnitch - Authentication Changes Detected
 
 **PR:** #123 "Add OAuth login flow"
 **Author:** @developer
@@ -276,7 +267,7 @@ New OAuth token validation logic
 ### Slack/Teams Rich Card
 
 The action sends rich cards with:
-- Risk score visualization
+- Signal summary (Claude: Detected, Keywords: oauth, jwt)
 - PR metadata
 - Summary of changes
 - Affected files list
@@ -353,12 +344,11 @@ authsnitch/
 │       ├── client.rb       # GitHub API client (octokit)
 │       ├── diff_analyzer.rb # Parse PR diffs
 │       ├── detector.rb     # Claude-powered detection
-│       ├── risk_scorer.rb  # Convert findings to scores
 │       ├── summarizer.rb   # Format detection results
 │       └── notifier.rb     # Slack/Teams/PR webhooks
 ├── config/
 │   ├── detection.yml       # Keywords + detection prompt
-│   └── defaults.yml        # Default thresholds & settings
+│   └── defaults.yml        # Default settings
 └── spec/                   # RSpec tests
 ```
 

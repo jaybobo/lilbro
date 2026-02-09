@@ -26,22 +26,6 @@ RSpec.describe Authsnitch::Notifier do
     )
   end
 
-  let(:score_result) do
-    {
-      score: 55,
-      label: 'HIGH',
-      color: '#ff9800',
-      breakdown: {
-        base_score: 40,
-        highest_risk: 'medium',
-        modifiers: [
-          { name: 'multiple_auth_files', points: 15, reason: '3 auth-sensitive files' }
-        ],
-        modifier_total: 15
-      }
-    }
-  end
-
   let(:pr_info) do
     {
       title: 'Update session handling',
@@ -53,112 +37,113 @@ RSpec.describe Authsnitch::Notifier do
   end
 
   describe '#notify_all' do
-    context 'with PR comment enabled' do
-      it 'posts comment when score exceeds threshold' do
+    context 'when should_notify is true' do
+      it 'posts PR comment when configured' do
         allow(github_client).to receive(:create_pr_comment).and_return(true)
 
         results = notifier.notify_all(
           detection_result: detection_result,
-          score_result: score_result,
+          should_notify: true,
           pr_info: pr_info,
           keywords_detected: ['session'],
-          config: { post_pr_comment: true, pr_comment_threshold: 50 }
+          config: { post_pr_comment: true }
         )
 
         expect(github_client).to have_received(:create_pr_comment)
         expect(results[:pr_comment][:success]).to be true
       end
 
-      it 'skips comment when score is below threshold' do
-        results = notifier.notify_all(
-          detection_result: detection_result,
-          score_result: score_result,
-          pr_info: pr_info,
-          keywords_detected: [],
-          config: { post_pr_comment: true, pr_comment_threshold: 60 }
-        )
-
-        expect(results[:pr_comment][:skipped]).to be true
-      end
-    end
-
-    context 'with Slack webhook' do
-      let(:webhook_url) { 'https://hooks.slack.com/services/test' }
-
-      it 'sends notification when score exceeds threshold' do
+      it 'sends Slack notification when configured' do
+        webhook_url = 'https://hooks.slack.com/services/test'
         stub_request(:post, webhook_url).to_return(status: 200, body: 'ok')
 
         results = notifier.notify_all(
           detection_result: detection_result,
-          score_result: score_result,
+          should_notify: true,
           pr_info: pr_info,
           keywords_detected: ['session'],
-          config: { slack_webhook_url: webhook_url, slack_threshold: 50 }
+          config: { slack_webhook_url: webhook_url }
         )
 
         expect(results[:slack][:success]).to be true
         expect(WebMock).to have_requested(:post, webhook_url)
       end
 
-      it 'skips when score is below threshold' do
-        results = notifier.notify_all(
-          detection_result: detection_result,
-          score_result: score_result,
-          pr_info: pr_info,
-          keywords_detected: [],
-          config: { slack_webhook_url: webhook_url, slack_threshold: 80 }
-        )
-
-        expect(results[:slack][:skipped]).to be true
-      end
-    end
-
-    context 'with Teams webhook' do
-      let(:webhook_url) { 'https://outlook.office.com/webhook/test' }
-
-      it 'sends notification when score exceeds threshold' do
+      it 'sends Teams notification when configured' do
+        webhook_url = 'https://outlook.office.com/webhook/test'
         stub_request(:post, webhook_url).to_return(status: 200, body: '1')
 
         results = notifier.notify_all(
           detection_result: detection_result,
-          score_result: score_result,
+          should_notify: true,
           pr_info: pr_info,
           keywords_detected: ['session'],
-          config: { teams_webhook_url: webhook_url, teams_threshold: 50 }
+          config: { teams_webhook_url: webhook_url }
         )
 
         expect(results[:teams][:success]).to be true
         expect(WebMock).to have_requested(:post, webhook_url)
       end
-    end
 
-    context 'with multiple channels' do
-      let(:slack_url) { 'https://hooks.slack.com/services/test' }
-      let(:teams_url) { 'https://outlook.office.com/webhook/test' }
-
-      it 'respects independent thresholds per channel' do
+      it 'sends to all configured channels' do
+        slack_url = 'https://hooks.slack.com/services/test'
+        teams_url = 'https://outlook.office.com/webhook/test'
         allow(github_client).to receive(:create_pr_comment).and_return(true)
         stub_request(:post, slack_url).to_return(status: 200)
         stub_request(:post, teams_url).to_return(status: 200)
 
         results = notifier.notify_all(
           detection_result: detection_result,
-          score_result: score_result,  # score is 55
+          should_notify: true,
           pr_info: pr_info,
-          keywords_detected: [],
+          keywords_detected: ['session'],
           config: {
             post_pr_comment: true,
-            pr_comment_threshold: 30,  # should send (55 >= 30)
             slack_webhook_url: slack_url,
-            slack_threshold: 50,       # should send (55 >= 50)
-            teams_webhook_url: teams_url,
-            teams_threshold: 70        # should skip (55 < 70)
+            teams_webhook_url: teams_url
           }
         )
 
         expect(results[:pr_comment][:success]).to be true
         expect(results[:slack][:success]).to be true
+        expect(results[:teams][:success]).to be true
+      end
+    end
+
+    context 'when should_notify is false' do
+      it 'skips all configured channels' do
+        slack_url = 'https://hooks.slack.com/services/test'
+        teams_url = 'https://outlook.office.com/webhook/test'
+
+        results = notifier.notify_all(
+          detection_result: detection_result,
+          should_notify: false,
+          pr_info: pr_info,
+          keywords_detected: [],
+          config: {
+            post_pr_comment: true,
+            slack_webhook_url: slack_url,
+            teams_webhook_url: teams_url
+          }
+        )
+
+        expect(results[:pr_comment][:skipped]).to be true
+        expect(results[:slack][:skipped]).to be true
         expect(results[:teams][:skipped]).to be true
+      end
+
+      it 'does not make any HTTP requests' do
+        slack_url = 'https://hooks.slack.com/services/test'
+
+        notifier.notify_all(
+          detection_result: detection_result,
+          should_notify: false,
+          pr_info: pr_info,
+          keywords_detected: [],
+          config: { slack_webhook_url: slack_url }
+        )
+
+        expect(WebMock).not_to have_requested(:post, slack_url)
       end
     end
   end
@@ -173,9 +158,9 @@ RSpec.describe Authsnitch::Notifier do
 
       summary = notifier.summarizer.summarize(
         detection_result: detection_result,
-        score_result: score_result,
         pr_info: pr_info,
-        keywords_detected: ['session']
+        keywords_detected: ['session'],
+        should_notify: true
       )
 
       result = notifier.send_slack(summary, pr_info, webhook_url)
@@ -188,9 +173,9 @@ RSpec.describe Authsnitch::Notifier do
 
       summary = notifier.summarizer.summarize(
         detection_result: detection_result,
-        score_result: score_result,
         pr_info: pr_info,
-        keywords_detected: []
+        keywords_detected: [],
+        should_notify: true
       )
 
       result = notifier.send_slack(summary, pr_info, webhook_url)
@@ -203,16 +188,16 @@ RSpec.describe Authsnitch::Notifier do
   describe '#send_teams' do
     let(:webhook_url) { 'https://outlook.office.com/webhook/test' }
 
-    it 'sends Adaptive Card formatted message' do
+    it 'sends MessageCard formatted message' do
       stub_request(:post, webhook_url)
         .with { |req| JSON.parse(req.body)['@type'] == 'MessageCard' }
         .to_return(status: 200)
 
       summary = notifier.summarizer.summarize(
         detection_result: detection_result,
-        score_result: score_result,
         pr_info: pr_info,
-        keywords_detected: ['session']
+        keywords_detected: ['session'],
+        should_notify: true
       )
 
       result = notifier.send_teams(summary, pr_info, webhook_url)
