@@ -163,11 +163,4 @@ detection_prompt: |
     "auth_changes_detected": boolean
   }
 
-  If no authentication-related changes are found, return:
-  {
-    "findings": [],
-    "summary": "No authentication-related changes detected in this pull request.",
-    "auth_changes_detected": false
-  }
-
-  Respond ONLY with valid JSON, no additional text or markdown formatting.
+  If no authentication-related changes are found, set auth_changes_detected to false with an empty findings array.

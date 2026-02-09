@@ -19,6 +19,30 @@ module Authsnitch
       keyword_init: true
     )
 
+    DETECTION_SCHEMA = {
+      type: 'object',
+      properties: {
+        findings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              type: { type: 'string' },
+              file: { type: 'string' },
+              code_section: { type: 'string' },
+              description: { type: 'string' }
+            },
+            required: %w[type file code_section description],
+            additionalProperties: false
+          }
+        },
+        summary: { type: 'string' },
+        auth_changes_detected: { type: 'boolean' }
+      },
+      required: %w[findings summary auth_changes_detected],
+      additionalProperties: false
+    }.freeze
+
     attr_reader :config, :client
 
     def initialize(api_key:, config_path: nil, custom_keywords: nil, custom_prompt: nil)
@@ -122,7 +146,13 @@ module Authsnitch
         max_tokens: defaults.dig('claude', 'max_tokens') || 4096,
         messages: [
           { role: 'user', content: prompt }
-        ]
+        ],
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: DETECTION_SCHEMA
+          }
+        }
       )
 
       response.content.first.text
@@ -136,11 +166,9 @@ module Authsnitch
     end
 
     def parse_response(response_text)
-      # Try to extract JSON from the response
-      json_text = extract_json(response_text)
-      data = JSON.parse(json_text)
+      data = JSON.parse(response_text)
 
-      findings = (data['findings'] || []).map do |f|
+      findings = data['findings'].map do |f|
         Finding.new(
           type: f['type'],
           file: f['file'],
@@ -151,46 +179,18 @@ module Authsnitch
 
       DetectionResult.new(
         findings: findings,
-        summary: data['summary'] || 'Analysis complete.',
-        auth_changes_detected: data['auth_changes_detected'] || false,
+        summary: data['summary'],
+        auth_changes_detected: data['auth_changes_detected'],
         raw_response: response_text
       )
-    rescue JSON::ParserError => e
-      # If JSON parsing fails, try to extract useful info from the raw response
-      # Claude likely detected something if it gave a text response
-      auth_detected = response_text.match?(/auth|password|token|session|login|credential/i)
-
+    rescue JSON::ParserError
+      # Only reachable if response was truncated (max_tokens) or refused
       DetectionResult.new(
         findings: [],
-        summary: "Claude analysis completed but response format was unexpected. " \
-                 "Manual review recommended. Raw response preview: #{response_text[0, 200]}...",
-        auth_changes_detected: auth_detected,
+        summary: 'Claude response could not be parsed. Manual review recommended.',
+        auth_changes_detected: false,
         raw_response: response_text
       )
-    end
-
-    def extract_json(text)
-      # Strategy 1: Try to find JSON in markdown code blocks
-      if text.include?('```')
-        match = text.match(/```\w*\s*(.*?)\s*```/m)
-        content = match&.captures&.first&.strip
-        return content if content&.start_with?('{', '[')
-      end
-
-      # Strategy 2: Try to find a JSON object anywhere in the text
-      # Look for content between first { and last }
-      if text.include?('{') && text.include?('}')
-        start_idx = text.index('{')
-        end_idx = text.rindex('}')
-        if start_idx && end_idx && end_idx > start_idx
-          potential_json = text[start_idx..end_idx]
-          # Validate it looks like our expected JSON structure
-          return potential_json if potential_json.include?('"findings"') || potential_json.include?('"summary"')
-        end
-      end
-
-      # Strategy 3: Return stripped text and let JSON parser handle it
-      text.strip
     end
 
     def empty_result
