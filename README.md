@@ -238,6 +238,39 @@ Use outputs in subsequent steps:
     echo "Keywords: ${{ steps.security-check.outputs.keywords_matched }}"
 ```
 
+## Custom Templates
+
+Notification layouts are rendered from ERB templates in `config/templates/`. You can edit these files directly to customize the notification format for your organization.
+
+### Default Templates
+
+| Template | Channel | Format |
+|----------|---------|--------|
+| `github_pr_comment.md.erb` | GitHub PR comment | Markdown |
+| `slack.json.erb` | Slack webhook | Block Kit JSON |
+| `teams.json.erb` | Teams webhook | MessageCard JSON |
+
+### Template Variables
+
+All templates receive two variables:
+
+- **`summary`** — Hash with keys: `title`, `pr_section`, `summary`, `findings`, `files_affected`, `keywords`, `recommendations`
+- **`pr_info`** — Hash with keys: `title`, `number`, `author`, `repo`, `url`
+
+A `truncate(text, max)` helper method is also available in all templates.
+
+### Customizing Templates
+
+Edit the ERB files in `config/templates/` to change notification layouts. For example, to add a custom footer to PR comments:
+
+```erb
+<%# config/templates/github_pr_comment.md.erb %>
+## <%= summary[:title] %>
+...
+---
+*Reviewed by YourCompany Security Team*
+```
+
 ## Notification Format
 
 ### PR Comment Example
@@ -348,7 +381,11 @@ authsnitch/
 │       └── notifier.rb     # Slack/Teams/PR webhooks
 ├── config/
 │   ├── detection.yml       # Keywords + detection prompt
-│   └── defaults.yml        # Default settings
+│   ├── defaults.yml        # Default settings
+│   └── templates/          # Editable ERB notification templates
+│       ├── github_pr_comment.md.erb
+│       ├── slack.json.erb
+│       └── teams.json.erb
 └── spec/                   # RSpec tests
 ```
 

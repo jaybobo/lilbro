@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'erb'
 require 'faraday'
 require 'json'
 
@@ -7,6 +8,7 @@ module Authsnitch
   # Sends notifications to various channels (Slack, Teams, PR comments)
   class Notifier
     ALERT_COLOR = '#ff9800'
+    TEMPLATES_DIR = File.expand_path('../../../config/templates', __FILE__)
 
     attr_reader :github_client, :summarizer
 
@@ -62,7 +64,7 @@ module Authsnitch
     # @param pr_info [Hash] PR metadata
     # @return [Hash] Result with success status
     def post_pr_comment(summary, pr_info)
-      markdown = summarizer.to_markdown(summary)
+      markdown = render_template('github_pr_comment.md.erb', summary, pr_info)
 
       github_client.create_pr_comment(
         repo: pr_info[:repo],
@@ -81,7 +83,7 @@ module Authsnitch
     # @param webhook_url [String] Slack webhook URL
     # @return [Hash] Result with success status
     def send_slack(summary, pr_info, webhook_url)
-      payload = build_slack_payload(summary, pr_info)
+      payload = JSON.parse(render_template('slack.json.erb', summary, pr_info))
 
       response = Faraday.post(webhook_url) do |req|
         req.headers['Content-Type'] = 'application/json'
@@ -103,7 +105,7 @@ module Authsnitch
     # @param webhook_url [String] Teams webhook URL
     # @return [Hash] Result with success status
     def send_teams(summary, pr_info, webhook_url)
-      payload = build_teams_payload(summary, pr_info)
+      payload = JSON.parse(render_template('teams.json.erb', summary, pr_info))
 
       response = Faraday.post(webhook_url) do |req|
         req.headers['Content-Type'] = 'application/json'
@@ -121,189 +123,13 @@ module Authsnitch
 
     private
 
-    def build_slack_payload(summary, pr_info)
-      blocks = []
-
-      # Header
-      blocks << {
-        type: 'header',
-        text: {
-          type: 'plain_text',
-          text: summary[:title],
-          emoji: true
-        }
-      }
-
-      # Signal Summary
-      signal_parts = []
-      signal_parts << "Claude: Detected" if summary[:findings].any?
-      signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
-
-      if signal_parts.any?
-        blocks << {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: "*Signals:* #{signal_parts.join(' | ')}"
-          }
-        }
-      end
-
-      # Divider
-      blocks << { type: 'divider' }
-
-      # PR Info Section
-      if pr_info[:title]
-        blocks << {
-          type: 'section',
-          fields: [
-            {
-              type: 'mrkdwn',
-              text: "*PR:* ##{pr_info[:number]} \"#{pr_info[:title]}\""
-            },
-            {
-              type: 'mrkdwn',
-              text: "*Author:* #{pr_info[:author] || 'Unknown'}"
-            },
-            {
-              type: 'mrkdwn',
-              text: "*Repository:* #{pr_info[:repo]}"
-            }
-          ]
-        }
-      end
-
-      # Divider
-      blocks << { type: 'divider' }
-
-      # Summary Section
-      blocks << {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: "*Summary:*\n#{truncate(summary[:summary], 500)}"
-        }
-      }
-
-      # Files Affected
-      if summary[:files_affected].any?
-        files_text = summary[:files_affected].first(5).map { |f| "• `#{f}`" }.join("\n")
-        files_text += "\n_...and #{summary[:files_affected].length - 5} more_" if summary[:files_affected].length > 5
-
-        blocks << {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: "*Files Affected:*\n#{files_text}"
-          }
-        }
-      end
-
-      # Keywords Detected
-      if summary[:keywords].any?
-        keywords_text = summary[:keywords].first(10).map { |k| "`#{k}`" }.join(', ')
-        blocks << {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: "*Keywords Detected:* #{keywords_text}"
-          }
-        }
-      end
-
-      # Divider
-      blocks << { type: 'divider' }
-
-      # Action Buttons
-      if pr_info[:url]
-        blocks << {
-          type: 'actions',
-          elements: [
-            {
-              type: 'button',
-              text: {
-                type: 'plain_text',
-                text: 'View PR',
-                emoji: true
-              },
-              url: pr_info[:url],
-              style: 'primary'
-            },
-            {
-              type: 'button',
-              text: {
-                type: 'plain_text',
-                text: 'View Diff',
-                emoji: true
-              },
-              url: "#{pr_info[:url]}/files"
-            }
-          ]
-        }
-      end
-
-      {
-        attachments: [
-          {
-            color: ALERT_COLOR,
-            blocks: blocks
-          }
-        ]
-      }
-    end
-
-    def build_teams_payload(summary, pr_info)
-      # Build facts for PR info
-      facts = []
-      signal_parts = []
-      signal_parts << "Claude: Detected" if summary[:findings].any?
-      signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
-      facts << { title: 'Signals', value: signal_parts.join(' | ') } if signal_parts.any?
-      facts << { title: 'PR', value: "##{pr_info[:number]} - #{pr_info[:title]}" } if pr_info[:title]
-      facts << { title: 'Author', value: pr_info[:author] } if pr_info[:author]
-      facts << { title: 'Repository', value: pr_info[:repo] } if pr_info[:repo]
-
-      if summary[:files_affected].any?
-        files_text = summary[:files_affected].first(5).join(', ')
-        files_text += "... +#{summary[:files_affected].length - 5} more" if summary[:files_affected].length > 5
-        facts << { title: 'Files Affected', value: files_text }
-      end
-
-      if summary[:keywords].any?
-        facts << { title: 'Keywords', value: summary[:keywords].first(10).join(', ') }
-      end
-
-      # Build actions
-      actions = []
-      if pr_info[:url]
-        actions << {
-          '@type': 'OpenUri',
-          name: 'View PR',
-          targets: [{ os: 'default', uri: pr_info[:url] }]
-        }
-        actions << {
-          '@type': 'OpenUri',
-          name: 'View Diff',
-          targets: [{ os: 'default', uri: "#{pr_info[:url]}/files" }]
-        }
-      end
-
-      {
-        '@type': 'MessageCard',
-        '@context': 'http://schema.org/extensions',
-        themeColor: ALERT_COLOR.delete('#'),
-        summary: summary[:title],
-        sections: [
-          {
-            activityTitle: summary[:title],
-            activitySubtitle: pr_info[:repo],
-            facts: facts,
-            text: truncate(summary[:summary], 500),
-            markdown: true
-          }
-        ],
-        potentialAction: actions
-      }
+    def render_template(template_name, summary, pr_info)
+      template_path = File.join(TEMPLATES_DIR, template_name)
+      template = ERB.new(File.read(template_path), trim_mode: '-')
+      b = binding
+      b.local_variable_set(:summary, summary)
+      b.local_variable_set(:pr_info, pr_info)
+      template.result(b)
     end
 
     def truncate(text, max_length)

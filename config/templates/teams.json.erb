@@ -1,0 +1,53 @@
+<%
+  # Build facts for PR info
+  facts = []
+  signal_parts = []
+  signal_parts << "Claude: Detected" if summary[:findings].any?
+  signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
+  facts << { title: 'Signals', value: signal_parts.join(' | ') } if signal_parts.any?
+  facts << { title: 'PR', value: "##{pr_info[:number]} - #{pr_info[:title]}" } if pr_info[:title]
+  facts << { title: 'Author', value: pr_info[:author] } if pr_info[:author]
+  facts << { title: 'Repository', value: pr_info[:repo] } if pr_info[:repo]
+
+  if summary[:files_affected].any?
+    files_text = summary[:files_affected].first(5).join(', ')
+    files_text += "... +#{summary[:files_affected].length - 5} more" if summary[:files_affected].length > 5
+    facts << { title: 'Files Affected', value: files_text }
+  end
+
+  if summary[:keywords].any?
+    facts << { title: 'Keywords', value: summary[:keywords].first(10).join(', ') }
+  end
+
+  # Build actions
+  actions = []
+  if pr_info[:url]
+    actions << {
+      '@type': 'OpenUri',
+      name: 'View PR',
+      targets: [{ os: 'default', uri: pr_info[:url] }]
+    }
+    actions << {
+      '@type': 'OpenUri',
+      name: 'View Diff',
+      targets: [{ os: 'default', uri: "#{pr_info[:url]}/files" }]
+    }
+  end
+
+  payload = {
+    '@type': 'MessageCard',
+    '@context': 'http://schema.org/extensions',
+    themeColor: 'ff9800',
+    summary: summary[:title],
+    sections: [
+      {
+        activityTitle: summary[:title],
+        activitySubtitle: pr_info[:repo],
+        facts: facts,
+        text: truncate(summary[:summary], 500),
+        markdown: true
+      }
+    ],
+    potentialAction: actions
+  }
+%><%= JSON.generate(payload) %>

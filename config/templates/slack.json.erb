@@ -1,0 +1,130 @@
+<%
+  blocks = []
+
+  # Header
+  blocks << {
+    type: 'header',
+    text: {
+      type: 'plain_text',
+      text: summary[:title],
+      emoji: true
+    }
+  }
+
+  # Signal Summary
+  signal_parts = []
+  signal_parts << "Claude: Detected" if summary[:findings].any?
+  signal_parts << "Keywords: #{summary[:keywords].join(', ')}" if summary[:keywords].any?
+
+  if signal_parts.any?
+    blocks << {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: "*Signals:* #{signal_parts.join(' | ')}"
+      }
+    }
+  end
+
+  # Divider
+  blocks << { type: 'divider' }
+
+  # PR Info Section
+  if pr_info[:title]
+    blocks << {
+      type: 'section',
+      fields: [
+        {
+          type: 'mrkdwn',
+          text: "*PR:* ##{pr_info[:number]} \"#{pr_info[:title]}\""
+        },
+        {
+          type: 'mrkdwn',
+          text: "*Author:* #{pr_info[:author] || 'Unknown'}"
+        },
+        {
+          type: 'mrkdwn',
+          text: "*Repository:* #{pr_info[:repo]}"
+        }
+      ]
+    }
+  end
+
+  # Divider
+  blocks << { type: 'divider' }
+
+  # Summary Section
+  blocks << {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: "*Summary:*\n#{truncate(summary[:summary], 500)}"
+    }
+  }
+
+  # Files Affected
+  if summary[:files_affected].any?
+    files_text = summary[:files_affected].first(5).map { |f| "• `#{f}`" }.join("\n")
+    files_text += "\n_...and #{summary[:files_affected].length - 5} more_" if summary[:files_affected].length > 5
+
+    blocks << {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: "*Files Affected:*\n#{files_text}"
+      }
+    }
+  end
+
+  # Keywords Detected
+  if summary[:keywords].any?
+    keywords_text = summary[:keywords].first(10).map { |k| "`#{k}`" }.join(', ')
+    blocks << {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: "*Keywords Detected:* #{keywords_text}"
+      }
+    }
+  end
+
+  # Divider
+  blocks << { type: 'divider' }
+
+  # Action Buttons
+  if pr_info[:url]
+    blocks << {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View PR',
+            emoji: true
+          },
+          url: pr_info[:url],
+          style: 'primary'
+        },
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View Diff',
+            emoji: true
+          },
+          url: "#{pr_info[:url]}/files"
+        }
+      ]
+    }
+  end
+
+  payload = {
+    attachments: [
+      {
+        color: '#ff9800',
+        blocks: blocks
+      }
+    ]
+  }
+%><%= JSON.generate(payload) %>
