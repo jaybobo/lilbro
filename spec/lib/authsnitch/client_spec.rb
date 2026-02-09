@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Lilbro::Client do
+RSpec.describe Authsnitch::Client do
   subject(:client) { described_class.new(token: 'test-token') }
 
   describe '#initialize' do

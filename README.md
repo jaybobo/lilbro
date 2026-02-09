@@ -1,8 +1,8 @@
-# LilBro - Authentication Change Detection GitHub Action
+# AuthSnitch - Authentication Change Detection GitHub Action
 
 Misconfigured authentication and sensitive data leaks? **Nobody got time for that!**
 
-LilBro is a lovable tattletale that helps understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when an additional manual or AI-powered security review may be needed.
+AuthSnitch is a lovable tattletale that helps understaffed appsec teams monitor pull requests for authentication-related changes and alerts security teams when an additional manual or AI-powered security review may be needed.
 
 ## Features
 
@@ -25,7 +25,7 @@ jobs:
   auth-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: jaybobo/lilbro@v1
+      - uses: jaybobo/authsnitch@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -38,13 +38,13 @@ jobs:
 To use the latest commit from main (includes recent fixes not yet in a release):
 
 ```yaml
-      - uses: jaybobo/lilbro@main
+      - uses: jaybobo/authsnitch@main
 ```
 
 Or pin to a specific commit SHA for stability:
 
 ```yaml
-      - uses: jaybobo/lilbro@abc1234
+      - uses: jaybobo/authsnitch@abc1234
 ```
 
 ## Configuration
@@ -88,7 +88,7 @@ Each notification channel can have its own threshold, enabling scenarios like:
 
 ## Risk Scoring
 
-LilBro calculates risk scores based on Claude's analysis:
+AuthSnitch calculates risk scores based on Claude's analysis:
 
 | Risk Level | Score Range |
 |------------|-------------|
@@ -129,7 +129,7 @@ Additional points are added for:
 
 ## Custom Configuration
 
-Create a `.github/lilbro/detection.yml` file in your repository:
+Create a `.github/authsnitch/detection.yml` file in your repository:
 
 ```yaml
 # Add organization-specific keywords
@@ -156,7 +156,7 @@ Then reference it in your workflow:
 Add these framework-specific keywords to your `detection.yml` based on your stack:
 
 ```yaml
-# .github/lilbro/detection.yml
+# .github/authsnitch/detection.yml
 keywords:
   # Ruby frameworks
   ruby_frameworks:
@@ -195,7 +195,7 @@ jobs:
   auth-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: jaybobo/lilbro@v1
+      - uses: jaybobo/authsnitch@v1
         with:
           # Required
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -215,7 +215,7 @@ jobs:
           custom_keywords: 'internal_sso,corp_ldap,my_auth_service'
 
           # Use custom config from repo
-          detection_config_path: .github/lilbro/detection.yml
+          detection_config_path: .github/authsnitch/detection.yml
 ```
 
 ## Outputs
@@ -233,7 +233,7 @@ The action provides the following outputs:
 Use outputs in subsequent steps:
 
 ```yaml
-- uses: jaybobo/lilbro@v1
+- uses: jaybobo/authsnitch@v1
   id: security-check
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -250,7 +250,7 @@ Use outputs in subsequent steps:
 ### PR Comment Example
 
 ```markdown
-## LilBro Security Alert - HIGH RISK
+## AuthSnitch Security Alert - HIGH RISK
 
 **Risk Score: 72 (HIGH)** [*******---]
 
@@ -343,13 +343,13 @@ act pull_request -e test-event.json --secret-file .secrets
 ## Architecture
 
 ```
-lilbro/
+authsnitch/
 ├── action.yml              # GitHub Action metadata
 ├── Dockerfile              # Ruby 3.2 container
 ├── Gemfile                 # Dependencies
 ├── entrypoint.rb           # Main entry point
 ├── lib/
-│   └── lilbro/
+│   └── authsnitch/
 │       ├── client.rb       # GitHub API client (octokit)
 │       ├── diff_analyzer.rb # Parse PR diffs
 │       ├── detector.rb     # Claude-powered detection

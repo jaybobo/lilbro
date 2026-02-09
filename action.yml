@@ -1,4 +1,4 @@
-name: 'LilBro Security Review'
+name: 'AuthSnitch Security Review'
 description: 'Monitors pull requests for authentication-related changes and alerts security teams when manual review may be needed'
 author: 'Your Organization'
 

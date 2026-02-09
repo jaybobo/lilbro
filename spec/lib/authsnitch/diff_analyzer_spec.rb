@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Lilbro::DiffAnalyzer do
+RSpec.describe Authsnitch::DiffAnalyzer do
   subject(:analyzer) { described_class.new }
 
   describe '#parse' do
@@ -106,7 +106,7 @@ RSpec.describe Lilbro::DiffAnalyzer do
   describe '#extract_changes_for_analysis' do
     let(:file_changes) do
       [
-        Lilbro::DiffAnalyzer::FileChange.new(
+        Authsnitch::DiffAnalyzer::FileChange.new(
           filename: 'app/controllers/auth_controller.rb',
           status: 'modified',
           additions: ['def login', '  authenticate_user!', 'end'],
@@ -114,7 +114,7 @@ RSpec.describe Lilbro::DiffAnalyzer do
           patch: nil,
           auth_sensitive: true
         ),
-        Lilbro::DiffAnalyzer::FileChange.new(
+        Authsnitch::DiffAnalyzer::FileChange.new(
           filename: 'lib/helpers.rb',
           status: 'modified',
           additions: ['def format_date'],
@@ -145,9 +145,9 @@ RSpec.describe Lilbro::DiffAnalyzer do
   describe '#count_auth_sensitive_files' do
     it 'counts auth-sensitive files correctly' do
       file_changes = [
-        Lilbro::DiffAnalyzer::FileChange.new(filename: 'a.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: true),
-        Lilbro::DiffAnalyzer::FileChange.new(filename: 'b.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: false),
-        Lilbro::DiffAnalyzer::FileChange.new(filename: 'c.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: true)
+        Authsnitch::DiffAnalyzer::FileChange.new(filename: 'a.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: true),
+        Authsnitch::DiffAnalyzer::FileChange.new(filename: 'b.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: false),
+        Authsnitch::DiffAnalyzer::FileChange.new(filename: 'c.rb', status: 'modified', additions: [], deletions: [], patch: nil, auth_sensitive: true)
       ]
 
       expect(analyzer.count_auth_sensitive_files(file_changes)).to eq(2)

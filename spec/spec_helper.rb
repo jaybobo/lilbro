@@ -4,7 +4,7 @@ require 'bundler/setup'
 require 'webmock/rspec'
 require 'vcr'
 
-require_relative '../lib/lilbro'
+require_relative '../lib/authsnitch'
 
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/fixtures/vcr_cassettes'

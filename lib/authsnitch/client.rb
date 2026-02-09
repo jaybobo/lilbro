@@ -2,7 +2,7 @@
 
 require 'octokit'
 
-module Lilbro
+module Authsnitch
   # GitHub API client for fetching PR metadata, diffs, and changed files
   class Client
     attr_reader :octokit

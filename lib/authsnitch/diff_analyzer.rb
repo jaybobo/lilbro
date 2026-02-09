@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Lilbro
+module Authsnitch
   # Parses unified diff format and extracts relevant change information
   class DiffAnalyzer
     # File patterns that are typically auth-sensitive

@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Lilbro::Detector do
+RSpec.describe Authsnitch::Detector do
   let(:mock_client) { instance_double(Anthropic::Client) }
   let(:mock_messages) { instance_double('Messages') }
 
@@ -114,7 +114,7 @@ RSpec.describe Lilbro::Detector do
       it 'returns structured detection result' do
         result = detector.analyze(diff_content)
 
-        expect(result).to be_a(Lilbro::Detector::DetectionResult)
+        expect(result).to be_a(Authsnitch::Detector::DetectionResult)
         expect(result.auth_changes_detected).to be true
         expect(result.highest_risk).to eq('medium')
       end

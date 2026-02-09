@@ -4,7 +4,7 @@ require 'anthropic'
 require 'yaml'
 require 'json'
 
-module Lilbro
+module Authsnitch
   # Claude-powered detection engine for analyzing PR diffs
   class Detector
     DEFAULT_CONFIG_PATH = File.expand_path('../../config/detection.yml', __dir__)

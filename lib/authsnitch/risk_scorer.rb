@@ -2,7 +2,7 @@
 
 require 'yaml'
 
-module Lilbro
+module Authsnitch
   # Converts Claude detection findings to a numeric risk score (0-100)
   class RiskScorer
     DEFAULTS_PATH = File.expand_path('../../config/defaults.yml', __dir__)

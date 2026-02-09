@@ -3,7 +3,7 @@
 require 'faraday'
 require 'json'
 
-module Lilbro
+module Authsnitch
   # Sends notifications to various channels (Slack, Teams, PR comments)
   class Notifier
     attr_reader :github_client, :summarizer

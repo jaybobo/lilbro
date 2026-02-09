@@ -2,11 +2,11 @@
 
 require 'spec_helper'
 
-RSpec.describe Lilbro::RiskScorer do
+RSpec.describe Authsnitch::RiskScorer do
   subject(:scorer) { described_class.new }
 
   let(:empty_detection_result) do
-    Lilbro::Detector::DetectionResult.new(
+    Authsnitch::Detector::DetectionResult.new(
       findings: [],
       summary: 'No auth changes detected.',
       auth_changes_detected: false,
@@ -16,9 +16,9 @@ RSpec.describe Lilbro::RiskScorer do
   end
 
   let(:low_risk_detection_result) do
-    Lilbro::Detector::DetectionResult.new(
+    Authsnitch::Detector::DetectionResult.new(
       findings: [
-        Lilbro::Detector::Finding.new(
+        Authsnitch::Detector::Finding.new(
           type: 'session_handling',
           file: 'app/controllers/sessions_controller.rb',
           code_section: 'session[:user_id] = user.id',
@@ -36,9 +36,9 @@ RSpec.describe Lilbro::RiskScorer do
   end
 
   let(:high_risk_detection_result) do
-    Lilbro::Detector::DetectionResult.new(
+    Authsnitch::Detector::DetectionResult.new(
       findings: [
-        Lilbro::Detector::Finding.new(
+        Authsnitch::Detector::Finding.new(
           type: 'oauth_integration',
           file: 'lib/auth/okta_handler.rb',
           code_section: 'OktaClient.new(api_key: ENV["OKTA_KEY"])',
@@ -47,7 +47,7 @@ RSpec.describe Lilbro::RiskScorer do
           risk_level: 'high',
           recommendation: 'Security team review required'
         ),
-        Lilbro::Detector::Finding.new(
+        Authsnitch::Detector::Finding.new(
           type: 'credential_storage',
           file: 'config/secrets.yml',
           code_section: 'api_secret: <%= ENV["API_SECRET"] %>',
@@ -66,7 +66,7 @@ RSpec.describe Lilbro::RiskScorer do
 
   let(:auth_sensitive_files) do
     [
-      Lilbro::DiffAnalyzer::FileChange.new(
+      Authsnitch::DiffAnalyzer::FileChange.new(
         filename: 'app/controllers/sessions_controller.rb',
         status: 'modified',
         additions: [],
@@ -74,7 +74,7 @@ RSpec.describe Lilbro::RiskScorer do
         patch: nil,
         auth_sensitive: true
       ),
-      Lilbro::DiffAnalyzer::FileChange.new(
+      Authsnitch::DiffAnalyzer::FileChange.new(
         filename: 'lib/auth/oauth_handler.rb',
         status: 'modified',
         additions: [],

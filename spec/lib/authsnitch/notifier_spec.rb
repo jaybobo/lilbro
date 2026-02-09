@@ -2,14 +2,14 @@
 
 require 'spec_helper'
 
-RSpec.describe Lilbro::Notifier do
-  let(:github_client) { instance_double(Lilbro::Client) }
+RSpec.describe Authsnitch::Notifier do
+  let(:github_client) { instance_double(Authsnitch::Client) }
   subject(:notifier) { described_class.new(github_client: github_client) }
 
   let(:detection_result) do
-    Lilbro::Detector::DetectionResult.new(
+    Authsnitch::Detector::DetectionResult.new(
       findings: [
-        Lilbro::Detector::Finding.new(
+        Authsnitch::Detector::Finding.new(
           type: 'session_handling',
           file: 'app/controllers/sessions_controller.rb',
           code_section: 'session[:user_id] = user.id',

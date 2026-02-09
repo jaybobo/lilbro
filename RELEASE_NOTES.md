@@ -1,8 +1,8 @@
-# LilBro v0.1.0-alpha
+# AuthSnitch v0.1.0-alpha
 
 > Your lovable tattletale for authentication change detection
 
-This is the initial alpha release of LilBro, a GitHub Action that monitors pull requests for authentication-related changes and alerts security teams when manual review may be needed.
+This is the initial alpha release of AuthSnitch, a GitHub Action that monitors pull requests for authentication-related changes and alerts security teams when manual review may be needed.
 
 ## Features
 
@@ -20,7 +20,7 @@ This is the initial alpha release of LilBro, a GitHub Action that monitors pull 
 ## Installation
 
 ```yaml
-# .github/workflows/lilbro.yml
+# .github/workflows/authsnitch.yml
 name: Authentication Review Check
 on:
   pull_request:
@@ -30,7 +30,7 @@ jobs:
   auth-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: your-org/lilbro@v0.1.0-alpha
+      - uses: your-org/authsnitch@v0.1.0-alpha
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -58,8 +58,8 @@ jobs:
 ## Feedback
 
 This is an alpha release. Please report issues and share feedback:
-- [Open an issue](https://github.com/jaybobo/lilbro/issues)
+- [Open an issue](https://github.com/jaybobo/authsnitch/issues)
 
 ---
 
-**Full Changelog**: https://github.com/jaybobo/lilbro/commits/v0.1.0-alpha
+**Full Changelog**: https://github.com/jaybobo/authsnitch/commits/v0.1.0-alpha

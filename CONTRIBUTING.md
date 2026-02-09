@@ -1,13 +1,13 @@
-# Contributing to LilBro
+# Contributing to AuthSnitch
 
-Thanks for your interest in contributing to LilBro!
+Thanks for your interest in contributing to AuthSnitch!
 
 ## Development Setup
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/lilbro.git
-cd lilbro
+git clone https://github.com/your-org/authsnitch.git
+cd authsnitch
 
 # Install dependencies (requires Ruby 3.2+)
 bundle install

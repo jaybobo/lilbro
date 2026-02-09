@@ -3,9 +3,9 @@
 
 require 'bundler/setup'
 require 'json'
-require_relative 'lib/lilbro'
+require_relative 'lib/authsnitch'
 
-# Main entrypoint for the LilBro GitHub Action
+# Main entrypoint for the AuthSnitch GitHub Action
 class Entrypoint
   def initialize
     @github_token = ENV.fetch('GITHUB_TOKEN') { raise 'GITHUB_TOKEN is required' }
@@ -29,10 +29,10 @@ class Entrypoint
   end
 
   def run
-    log 'LilBro Security Review starting...'
+    log 'AuthSnitch Security Review starting...'
 
     # Get PR context from GitHub Actions environment
-    pr_context = Lilbro::Client.pr_context_from_env
+    pr_context = Authsnitch::Client.pr_context_from_env
     unless pr_context
       log 'Not a pull request event or missing context. Skipping.'
       exit 0
@@ -43,16 +43,16 @@ class Entrypoint
     log "Analyzing PR ##{pr_number} in #{repo}"
 
     # Initialize components
-    github_client = Lilbro::Client.new(token: @github_token)
-    diff_analyzer = Lilbro::DiffAnalyzer.new
-    detector = Lilbro::Detector.new(
+    github_client = Authsnitch::Client.new(token: @github_token)
+    diff_analyzer = Authsnitch::DiffAnalyzer.new
+    detector = Authsnitch::Detector.new(
       api_key: @anthropic_api_key,
       config_path: resolve_config_path,
       custom_keywords: @custom_keywords,
       custom_prompt: @detection_prompt
     )
-    risk_scorer = Lilbro::RiskScorer.new
-    notifier = Lilbro::Notifier.new(github_client: github_client)
+    risk_scorer = Authsnitch::RiskScorer.new
+    notifier = Authsnitch::Notifier.new(github_client: github_client)
 
     # Fetch PR data
     log 'Fetching PR metadata and diff...'
@@ -131,7 +131,7 @@ class Entrypoint
     # Output summary
     output_summary(detection_result, score_result)
 
-    log 'LilBro Security Review complete.'
+    log 'AuthSnitch Security Review complete.'
   end
 
   private
@@ -170,7 +170,7 @@ class Entrypoint
   end
 
   def log(message)
-    puts "[LilBro] #{message}"
+    puts "[AuthSnitch] #{message}"
   end
 end
 
