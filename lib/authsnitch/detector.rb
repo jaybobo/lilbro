@@ -142,7 +142,7 @@ module Authsnitch
       defaults = load_defaults
 
       response = client.messages.create(
-        model: defaults.dig('claude', 'model') || 'claude-sonnet-4-20250514',
+        model: defaults.dig('claude', 'model') || 'claude-sonnet-4-5-20250929',
         max_tokens: defaults.dig('claude', 'max_tokens') || 4096,
         messages: [
           { role: 'user', content: prompt }
