@@ -61,6 +61,7 @@ Or pin to a specific commit SHA for stability:
 | `anthropic_api_key` | Claude API key for detection and summarization |
 
 ### Notification Channels
+Instructions for enabling incoming webhooks for [Microsoft Teams](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=classicteams%2Cdotnet) and [Slack](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/).
 
 | Input | Description | Default |
 |-------|-------------|---------|
