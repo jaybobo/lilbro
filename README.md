@@ -1,5 +1,7 @@
 # AuthSnitch
 
+![authsnitch](docs/slack-screenshot.png)
+
 ## What's AuthSnitch?
 
 AuthSnitch is an authentication change detection GitHub Action.
